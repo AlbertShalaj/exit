@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exit Ticket: Financiële Taalcheck</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div id="root" class="p-4 md:p-8"></div>
+
+    <script type="text/babel">
+        const { useState, useCallback } = React;
+
+        // Lucide Icons als inline SVG-componenten
+        const CheckCircle = ({ size, className }) => <svg className={className} width={size || 24} height={size || 24} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="M9 11l3 3L22 4"/></svg>;
+        const XCircle = ({ size, className }) => <svg className={className} width={size || 24} height={size || 24} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6"/><path d="M9 9l6 6"/></svg>;
+        const Zap = ({ size, className }) => <svg className={className} width={size || 24} height={size || 24} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M13 2L3 14h9l-1 8l10-12h-9l1-8z"/></svg>;
+
+        // --- DE QUIZ DATA ---
+        const QUESTIONS = [
+            {
+                id: 'q1',
+                label: '1. De huur van een appartement is een... (Pad 4)',
+                type: 'radio',
+                options: ['Vaste Uitgave', 'Variabele Uitgave', 'Variabele Inkomst'],
+                correct: 'Vaste Uitgave'
+            },
+            {
+                id: 'q2',
+                label: '2. Op welk type uitgaven kun je het snelst en gemakkelijkst besparen? (Lesdoel)',
+                type: 'radio',
+                options: ['Vaste Uitgaven', 'Variabele Uitgaven', 'Niet-maandelijkse Uitgaven'],
+                correct: 'Variabele Uitgaven'
+            },
+            {
+                id: 'q3',
+                label: '3. Het verschil tussen inkomsten en uitgaven is het... (Pad 5)',
+                type: 'text',
+                correct: 'saldo',
+                placeholder: 'Typ hier het financiële woord (kleine letters)'
+            },
+            {
+                id: 'q4',
+                label: '4. Wat is het saldo? €2100 Inkomsten - €1950 Uitgaven = Saldo van... (Pad 5)',
+                type: 'number',
+                correct: 150,
+                placeholder: 'Typ alleen het getal'
+            },
+            {
+                id: 'q5',
+                label: '5. Welke organisatie biedt gratis hulp bij budgetbeheer/schuldbemiddeling? (Pad 6 context)',
+                type: 'radio',
+                options: ['Een commerciële bank (bv. KBC)', 'Een sociale organisatie (bv. OCMW/CAW)', 'De eigenaar van het Digiboek'],
+                correct: 'Een sociale organisatie (bv. OCMW/CAW)'
+            }
+        ];
+
+        // --- HOOFD COMPONENT ---
+        const ExitTicketApp = () => {
+            const initialAnswers = QUESTIONS.reduce((acc, q) => ({ ...acc, [q.id]: q.type === 'number' ? '' : '' }), {});
+            
+            const [answers, setAnswers] = useState(initialAnswers);
+            const [isSubmitted, setIsSubmitted] = useState(false);
+            const [score, setScore] = useState(null);
+            const [studentInfo, setStudentInfo] = useState({ naam: '', klas: '' });
+
+            // Handler voor het opslaan van antwoorden
+            const handleChange = useCallback((id, value) => {
+                setAnswers(prev => ({ ...prev, [id]: value }));
+            }, []);
+
+            // Handler voor student info
+            const handleStudentInfoChange = useCallback((e) => {
+                setStudentInfo(prev => ({ ...prev, [e.target.name]: e.target.value }));
+            }, []);
+
+            // Logica voor het berekenen van de score
+            const handleSubmit = (e) => {
+                e.preventDefault();
+                let correctCount = 0;
+
+                QUESTIONS.forEach(q => {
+                    const userAnswer = answers[q.id];
+                    let isCorrect = false;
+
+                    if (q.type === 'text') {
+                        isCorrect = userAnswer.toLowerCase().trim() === q.correct.toLowerCase().trim();
+                    } else if (q.type === 'number') {
+                        // Vergelijkt getallen
+                        isCorrect = parseFloat(userAnswer) === q.correct;
+                    } else {
+                        // Radio (string vergelijking)
+                        isCorrect = userAnswer === q.correct;
+                    }
+
+                    if (isCorrect) {
+                        correctCount++;
+                    }
+                });
+
+                setScore(correctCount);
+                setIsSubmitted(true);
+            };
+
+            const resetQuiz = useCallback(() => {
+                setAnswers(initialAnswers);
+                setIsSubmitted(false);
+                setScore(null);
+                setStudentInfo({ naam: '', klas: '' });
+            }, []);
+
+            // --- HULP COMPONENTEN VOOR RENDERING ---
+
+            // Toont het resultaat van één vraag
+            const ResultLine = ({ isCorrect, userAnswer, correctAnswer, label }) => (
+                <div className="border-b pb-3 mb-3">
+                    <p className="text-sm font-medium text-gray-700">{label}</p>
+                    <div className="flex items-start gap-3 mt-1">
+                        {isCorrect ? (
+                            <CheckCircle size={20} className="text-green-500 flex-shrink-0 mt-1" />
+                        ) : (
+                            <XCircle size={20} className="text-red-500 flex-shrink-0 mt-1" />
+                        )}
+                        <div>
+                            <p className={`text-gray-800 ${isCorrect ? '' : 'line-through'}`}>
+                                Jouw antwoord: <span className="font-semibold">{userAnswer || "(leeg)"}</span>
+                            </p>
+                            {!isCorrect && (
+                                <p className="text-green-600">
+                                    Correct antwoord: <span className="font-semibold">{correctAnswer}</span>
+                                </p>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            );
+
+            // De Quiz Render
+            const renderQuiz = () => (
+                <form onSubmit={handleSubmit} className="space-y-6">
+                    {/* Student Info */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 p-4 bg-white rounded-lg border shadow-sm">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">Naam Duo:</label>
+                            <input 
+                                type="text" 
+                                name="naam" 
+                                value={studentInfo.naam}
+                                onChange={handleStudentInfoChange}
+                                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" 
+                                required 
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">Klas/Datum:</label>
+                            <input 
+                                type="text" 
+                                name="klas"
+                                value={studentInfo.klas}
+                                onChange={handleStudentInfoChange}
+                                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" 
+                                required 
+                            />
+                        </div>
+                    </div>
+
+                    {/* Vragen */}
+                    {QUESTIONS.map((q, index) => (
+                        <div key={q.id} className="bg-white p-6 rounded-lg shadow-md border border-gray-200">
+                            <label className="block text-lg font-semibold text-gray-800 mb-4">{q.label}</label>
+                            
+                            {q.type === 'radio' && (
+                                <div className="space-y-2">
+                                    {q.options.map(option => (
+                                        <div key={option} className="flex items-center">
+                                            <input
+                                                type="radio"
+                                                id={`${q.id}-${option}`}
+                                                name={q.id}
+                                                value={option}
+                                                checked={answers[q.id] === option}
+                                                onChange={(e) => handleChange(q.id, e.target.value)}
+                                                className="h-4 w-4 text-indigo-600 border-gray-300"
+                                                required
+                                            />
+                                            <label htmlFor={`${q.id}-${option}`} className="ml-3 text-gray-700">{option}</label>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                            
+                            {(q.type === 'text' || q.type === 'number') && (
+                                <input
+                                    type={q.type}
+                                    value={answers[q.id]}
+                                    onChange={(e) => handleChange(q.id, e.target.value)}
+                                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"
+                                    placeholder={q.placeholder}
+                                    required
+                                />
+                            )}
+                        </div>
+                    ))}
+
+                    <div className="text-center pt-4">
+                        <button
+                            type="submit"
+                            className="px-10 py-3 bg-indigo-600 text-white font-bold text-lg rounded-lg shadow-lg hover:bg-indigo-700 transition-all flex items-center gap-2 mx-auto"
+                        >
+                            <Zap size={20} />
+                            Controleer Resultaten
+                        </button>
+                    </div>
+                </form>
+            );
+
+            // De Resultaten Render
+            const renderResults = () => {
+                const total = QUESTIONS.length;
+                const percentage = Math.round((score / total) * 100);
+
+                return (
+                    <div className="space-y-6">
+                        <header className="text-center mb-6 bg-white p-8 rounded-xl shadow-lg border-t-4 border-indigo-500">
+                            <h1 className="text-3xl font-extrabold text-indigo-600 mb-2">🎉 Resultaat Exit Ticket</h1>
+                            <p className="text-lg text-gray-600">Jouw score voor de financiële taalcheck.</p>
+                        </header>
+
+                        {/* Score Kaart */}
+                        <div className={`text-center p-6 rounded-lg shadow-xl ${percentage >= 70 ? 'bg-green-100 border-green-500' : 'bg-red-100 border-red-500'} border-l-4`}>
+                            <h2 className="text-4xl font-black">{score} / {total}</h2>
+                            <p className="text-xl font-semibold mt-1">({percentage}%) Correct</p>
+                            {percentage < 70 && (
+                                <p className="text-sm text-gray-700 mt-3">💡 Tip: Bekijk de foutieve antwoorden en herhaal de begrippen Saldo en Variabele Uitgaven.</p>
+                            )}
+                        </div>
+
+                        {/* Detail Resultaten */}
+                        <div className="bg-white p-6 rounded-lg shadow-md border">
+                            <h3 className="text-xl font-bold text-gray-800 mb-4">Gedetailleerde Feedback</h3>
+                            {QUESTIONS.map(q => {
+                                const userAnswer = q.type === 'number' ? answers[q.id].toString() : answers[q.id];
+                                let isCorrect = false;
+
+                                if (q.type === 'text') {
+                                    isCorrect = userAnswer.toLowerCase().trim() === q.correct.toLowerCase().trim();
+                                } else if (q.type === 'number') {
+                                    isCorrect = parseFloat(userAnswer) === q.correct;
+                                } else {
+                                    isCorrect = userAnswer === q.correct;
+                                }
+
+                                return (
+                                    <ResultLine
+                                        key={q.id}
+                                        label={q.label}
+                                        userAnswer={userAnswer}
+                                        correctAnswer={q.correct}
+                                        isCorrect={isCorrect}
+                                    />
+                                );
+                            })}
+                        </div>
+
+                        <div className="text-center pt-4">
+                            <button
+                                onClick={resetQuiz}
+                                className="px-8 py-3 bg-gray-500 text-white rounded-lg font-bold hover:bg-gray-600 transition-all"
+                            >
+                                Opnieuw beginnen
+                            </button>
+                        </div>
+                    </div>
+                );
+            };
+
+            return (
+                <div className="max-w-4xl mx-auto">
+                    {!isSubmitted ? renderQuiz() : renderResults()}
+                </div>
+            );
+        };
+
+        // Render de app naar de 'root' div
+        ReactDOM.render(<ExitTicketApp />, document.getElementById('root'));
+    </script>
+</body>
+</html>
